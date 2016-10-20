@@ -425,7 +425,6 @@ class MWSConnection(AWSQueryConnection):
 
     @requires(['ReportType'])
     @structured_lists('MarketplaceIdList.Id')
-    @boolean_arguments('ReportOptions=ShowSalesChannel')
     @api_action('Reports', 15, 60)
     def request_report(self, request, response, **kw):
         """Creates a report request and submits the request to Amazon MWS.
