@@ -429,30 +429,52 @@ class ComplexWeight(ResponseElement):
 class Dimension(ComplexType):
     _value = 'Value'
 
+    def __repr__(self):
+        return '{0.Value:0.2f}{0[Units]}'.format(self)
+
 
 class ComplexDimensions(ResponseElement):
     _dimensions = ('Height', 'Length', 'Width', 'Weight')
 
     def __repr__(self):
         values = [getattr(self, key, None) for key in self._dimensions]
-        values = [x for x in values if x is not None]
-        return 'x'.join(map('{0.Value:0.2f}'.format, values))
+        return 'x'.join(map(repr, filter(None, values)))
 
     @strip_namespace
     def startElement(self, name, attrs, connection):
-        if name not in self._dimensions and name != 'Unit':
+        if name not in self._dimensions:
             message = 'Unrecognized tag {0} in ComplexDimensions'.format(name)
             raise AssertionError(message)
-        if name == 'Unit':
-            return super(ComplexDimensions, self).startElement(name, attrs, connection)
-        else:
-            setattr(self, name, Dimension(attrs.copy()))
+        setattr(self, name, Dimension(attrs.copy()))
 
     @strip_namespace
     def endElement(self, name, value, connection):
         if name in self._dimensions:
             value = Decimal(value or '0')
         super(ComplexDimensions, self).endElement(name, value, connection)
+
+
+class SimpleDimensions(ResponseElement):
+    _dimensions = ('Height', 'Length', 'Width')
+
+    def __repr__(self):
+        values = [getattr(self, key, None) for key in self._dimensions]
+        values = [x for x in values if x is not None]
+        message = '{0:0.2f}' + getattr(self, 'Unit', '')
+        return 'x'.join(map(message.format, values))
+
+    @strip_namespace
+    def startElement(self, name, attrs, connection):
+        if name not in self._dimensions + ['Unit']:
+            message = 'Unrecognized tag {0} in SimpleDimensions'.format(name)
+            raise AssertionError(message)
+        super(SimpleDimensions, self).startElement(name, attrs, connection)
+
+    @strip_namespace
+    def endElement(self, name, value, connection):
+        if name in self._dimensions:
+            value = Decimal(value or '0')
+        super(SimpleDimensions, self).endElement(name, value, connection)
 
 
 class PartneredEstimate(ResponseElement):
@@ -465,7 +487,7 @@ class GetTransportContentResult(ResponseElement):
         TransportDetails=Element(
             PartneredSmallParcelData=Element(
                 PackageList=MemberList(
-                    Dimensions=Element(ComplexDimensions),
+                    Dimensions=Element(SimpleDimensions),
                     Weight=Element(ComplexWeight),
                 ),
                 PartneredEstimate=Element(PartneredEstimate),
@@ -474,7 +496,7 @@ class GetTransportContentResult(ResponseElement):
             PartneredLtlData=Element(
                 Contact=Element(),
                 PalletList=MemberList(
-                    Dimensions=Element(ComplexDimensions),
+                    Dimensions=Element(SimpleDimensions),
                     Weight=Element(ComplexWeight),
                 ),
                 TotalWeight=Element(ComplexWeight),
