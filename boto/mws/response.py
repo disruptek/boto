@@ -624,6 +624,7 @@ class Product(ResponseElement):
     )
     Relationships = Element(
         VariationParent=ElementList(VariationRelationship),
+        VariationChild=ElementList(VariationRelationship),
     )
     CompetitivePricing = ElementList(CompetitivePricing)
     SalesRankings = Element(
