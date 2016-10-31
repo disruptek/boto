@@ -22,6 +22,7 @@ import xml.sax
 import hashlib
 import string
 import collections
+from functools import wraps
 from boto.connection import AWSQueryConnection
 from boto.exception import BotoServerError
 import boto.mws.exception
@@ -71,6 +72,7 @@ def structured_lists(*fields):
 
     def decorator(func):
 
+        @wraps(func)
         def wrapper(self, *args, **kw):
             for key, acc in [f.split('.') for f in fields]:
                 if key in kw:
@@ -89,6 +91,7 @@ def http_body(field):
 
     def decorator(func):
 
+        @wraps(func)
         def wrapper(*args, **kw):
             if any([f not in kw for f in (field, 'content_type')]):
                 message = "{0} requires {1} and content_type arguments for " \
@@ -132,6 +135,7 @@ def structured_objects(*fields, **kwargs):
 
     def decorator(func):
 
+        @wraps(func)
         def wrapper(*args, **kw):
             members = kwargs.get('members', False)
             for field in filter(lambda i: i in kw, fields):
@@ -148,6 +152,7 @@ def requires(*groups):
 
     def decorator(func):
 
+        @wraps(func)
         def requires(*args, **kw):
             hasgroup = lambda group: all(key in kw for key in group)
             if 1 != len(list(filter(hasgroup, groups))):
@@ -167,6 +172,7 @@ def exclusive(*groups):
 
     def decorator(func):
 
+        @wraps(func)
         def wrapper(*args, **kw):
             hasgroup = lambda group: all(key in kw for key in group)
             if len(list(filter(hasgroup, groups))) not in (0, 1):
@@ -186,6 +192,7 @@ def dependent(field, *groups):
 
     def decorator(func):
 
+        @wraps(func)
         def wrapper(*args, **kw):
             hasgroup = lambda group: all(key in kw for key in group)
             if field in kw and not any(hasgroup(g) for g in groups):
@@ -206,6 +213,7 @@ def requires_some_of(*fields):
 
     def decorator(func):
 
+        @wraps(func)
         def requires(*args, **kw):
             if not any(i in kw for i in fields):
                 message = "{0} requires at least one of {1} argument(s)" \
@@ -222,6 +230,7 @@ def boolean_arguments(*fields):
 
     def decorator(func):
 
+        @wraps(func)
         def wrapper(*args, **kw):
             for field in [f for f in fields if isinstance(kw.get(f), bool)]:
                 kw[field] = str(kw[field]).lower()
@@ -238,6 +247,7 @@ def api_action(section, quota, restore, *api):
         version, accesskey, path = api_version_path[section]
         action = ''.join(api or map(str.capitalize, func.__name__.split('_')))
 
+        @wraps(func)
         def wrapper(self, *args, **kw):
             kw.setdefault(accesskey, getattr(self, accesskey, None))
             if kw[accesskey] is None:
@@ -248,7 +258,7 @@ def api_action(section, quota, restore, *api):
             kw['Action'] = action
             kw['Version'] = version
             try:
-            	kw['MWSAuthToken'] = self.MWSAuthToken
+                kw['MWSAuthToken'] = self.MWSAuthToken
             except AttributeError:
                 pass
             response = self._response_factory(action, connection=self)
@@ -275,9 +285,9 @@ class MWSConnection(AWSQueryConnection):
         self.Merchant = kw.pop('Merchant', None) or kw.get('SellerId')
         self.SellerId = kw.pop('SellerId', None) or self.Merchant
         try:
-        	self.MWSAuthToken = kw.pop('MWSAuthToken')
-    	except KeyError:
-	    	pass
+            self.MWSAuthToken = kw.pop('MWSAuthToken')
+        except KeyError:
+            pass
         kw = self._setup_factories(kw.pop('factory_scopes', []), **kw)
         super(MWSConnection, self).__init__(*args, **kw)
 
