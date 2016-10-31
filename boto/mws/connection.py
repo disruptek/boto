@@ -112,6 +112,8 @@ def http_body(field):
 def destructure_object(value, into, prefix, members=False):
     if isinstance(value, boto.mws.response.Element):
         destructure_object(value.__dict__, into, prefix, members=members)
+    elif isinstance(value, boto.mws.response.ResponseElement):
+        destructure_object(value.__dict__, into, prefix, members=members)
     elif isinstance(value, collections.Mapping):
         for name in value:
             if name.startswith('_'):
