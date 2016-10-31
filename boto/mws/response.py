@@ -595,9 +595,20 @@ class CompetitivePriceList(ResponseElement):
     CompetitivePrice = ElementList(CompetitivePrice)
 
 
+class OfferListingCount(ComplexType):
+    def __repr__(self):
+        return '{0.Value} {0[condition]}'.format(self)
+
+    @strip_namespace
+    def endElement(self, name, value, connection):
+        if name == 'Value':
+            value = int(value)
+        super(OfferListingCount, self).endElement(name, value, connection)
+
+
 class CompetitivePricing(ResponseElement):
     CompetitivePrices = Element(CompetitivePriceList)
-    NumberOfOfferListings = SimpleList()
+    NumberOfOfferListings = ElementList(OfferListingCount)
     TradeInValue = Element(ComplexMoney)
 
 
